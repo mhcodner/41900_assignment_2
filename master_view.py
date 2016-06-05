@@ -1,15 +1,37 @@
 import os
+from Crypto.Cipher import PKCS1_v1_5
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA
+from Crypto import Random
 
 
 def decrypt_valuables(f):
-    # TODO: For Part 2, you'll need to decrypt the contents of this file
-    # The existing scheme uploads in plaintext
-    # As such, we just convert it back to ASCII and print it out
-    decoded_text = str(f, 'ascii')
-    print(decoded_text)
+    # Check that the text is actually encoded first...
+    try:
+        print(str(f,'ascii'))
+        print("This text was not encrypted!")
+    # Now decrypt it with RSA
+    except UnicodeDecodeError:
+        # Get the private key and get associated hash digest size
+        key = RSA.importKey(open('Keys/master').read())
+        dsize = SHA.digest_size
+        sentinel = Random.new().read(15 + dsize)
+        # Make a cipher object to decrypt with
+        cipher = PKCS1_v1_5.new(key)
+        # Decode the text
+        decoded_text = cipher.decrypt(f, sentinel)
+        # Grab the digest and if the digest is right, print the decrypted data
+        digest = SHA.new(decoded_text[:-dsize]).digest()
+        if digest==decoded_text[-dsize:]:
+            # Remove the digest from the message
+            decoded_text=decoded_text[:-dsize]
+            decoded_text = str(decoded_text, 'ascii')
+            print(decoded_text)
+        else:
+            print("Bad encryption")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     fn = input("Which file in pastebot.net does the botnet master want to view? ")
     if not os.path.exists(os.path.join("pastebot.net", fn)):
         print("The given file doesn't exist on pastebot.net")
