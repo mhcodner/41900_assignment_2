@@ -1,9 +1,8 @@
 import os
-from Crypto.Signature import PKCS1_PSS
-from Crypto.Hash import SHA
-from Crypto import Random
 from Crypto.Cipher import PKCS1_v1_5
+from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
+from Crypto.Signature import PKCS1_PSS
 
 # Instead of storing files on disk,
 # we'll save them in memory for simplicity
@@ -11,16 +10,18 @@ filestore = {}
 # Valuable data to be sent to the botmaster
 valuables = []
 
+
 def save_valuable(data):
     valuables.append(data)
 
+
 def encrypt_for_master(data):
     # Encrypt the file so it can only be read by the bot master
-    h = SHA.new(data)
+    hash = SHA.new(data)
     key = RSA.importKey(open("Keys/master.pub").read())
     cipher = PKCS1_v1_5.new(key)
-    ciphertext = cipher.encrypt(data + h.digest())
-    return ciphertext
+    return cipher.encrypt(data + hash.digest())
+
 
 def upload_valuables_to_pastebot(fn):
     # Encrypt the valuables so only the bot master can read them
@@ -34,21 +35,22 @@ def upload_valuables_to_pastebot(fn):
     f.close()
     print("Saved valuables to pastebot.net/%s for the botnet master" % fn)
 
+
 def verify_file(f):
-    # Verify the file was sent by the bot master
+    # signature is first 256 characters
     signature = f[:256]
+    # message is the rest of the file
     message = f[256:]
-    # Read in the private key
+    # import the private key
     key = RSA.importKey(open("Keys/master.pub").read())
-    
-    #verify the signature
-    h = SHA.new()
-    h.update(message)
+
+    # verify the signature
+    hash = SHA.new()
+    hash.update(message)
     verifier = PKCS1_PSS.new(key)
-    
-    if verifier.verify(h, signature):
-        return True
-    return False
+
+    return verifier.verify(hash, signature)
+
 
 def process_file(fn, f):
     if verify_file(f):
@@ -60,6 +62,7 @@ def process_file(fn, f):
     else:
         print("The file has not been signed by the botnet master")
 
+
 def download_from_pastebot(fn):
     # "Download" the file from pastebot.net
     # (i.e. pretend we are and grab it from disk)
@@ -70,12 +73,14 @@ def download_from_pastebot(fn):
     f = open(os.path.join("pastebot.net", fn), "rb").read()
     process_file(fn, f)
 
+
 def p2p_download_file(sconn):
     # Download the file from the other bot
     fn = str(sconn.recv(), "ascii")
     f = sconn.recv()
     print("Receiving %s via P2P" % fn)
     process_file(fn, f)
+
 
 def p2p_upload_file(sconn, fn):
     # Grab the file and upload it to the other bot
@@ -88,6 +93,7 @@ def p2p_upload_file(sconn, fn):
     print("Sending %s via P2P" % fn)
     sconn.send(fn)
     sconn.send(filestore[fn])
+
 
 def run_file(f):
     # If the file can be run,

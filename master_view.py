@@ -1,37 +1,37 @@
 import os
-from Crypto.Cipher import PKCS1_v1_5
-from Crypto.PublicKey import RSA
-from Crypto.Hash import SHA
 from Crypto import Random
+from Crypto.Cipher import PKCS1_v1_5
+from Crypto.Hash import SHA
+from Crypto.PublicKey import RSA
 
 
 def decrypt_valuables(f):
-    # Check that the text is actually encoded first...
+    # Plain-text will print correctly
     try:
-        print(str(f,'ascii'))
+        print(str(f, 'ascii'))
         print("This text was not encrypted!")
-    # Now decrypt it with RSA
+    # Need to decrypt if it is actually encrypted
     except UnicodeDecodeError:
         # Get the private key and get associated hash digest size
-        key = RSA.importKey(open('Keys/master').read())
-        dsize = SHA.digest_size
-        sentinel = Random.new().read(15 + dsize)
-        # Make a cipher object to decrypt with
-        cipher = PKCS1_v1_5.new(key)
+        privateKey = RSA.importKey(open('Keys/master').read())
+        digest_size = SHA.digest_size
+        sentinel = Random.new().read(15 + digest_size)
+        # Initialise the PKCS1 cipher
+        cipher = PKCS1_v1_5.new(privateKey)
         # Decode the text
-        decoded_text = cipher.decrypt(f, sentinel)
+        decrypted_text = cipher.decrypt(f, sentinel)
         # Grab the digest and if the digest is right, print the decrypted data
-        digest = SHA.new(decoded_text[:-dsize]).digest()
-        if digest==decoded_text[-dsize:]:
+        digest = SHA.new(decrypted_text[:-digest_size]).digest()
+        if digest == decrypted_text[-digest_size:]:
             # Remove the digest from the message
-            decoded_text=decoded_text[:-dsize]
-            decoded_text = str(decoded_text, 'ascii')
-            print(decoded_text)
+            decrypted_text = decrypted_text[:-digest_size]
+            decrypted_text = str(decrypted_text, 'ascii')
+            print(decrypted_text)
         else:
-            print("Bad encryption")
+            print("Decryption failed")
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     fn = input("Which file in pastebot.net does the botnet master want to view? ")
     if not os.path.exists(os.path.join("pastebot.net", fn)):
         print("The given file doesn't exist on pastebot.net")

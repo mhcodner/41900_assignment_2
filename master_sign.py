@@ -3,16 +3,16 @@ from Crypto.Signature import PKCS1_PSS
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
 
-def sign_file(f):    
+
+def sign_file(f):
     # Read in the private key
     key = RSA.importKey(open("Keys/master").read())
 
-    # sign using the RSASSA-PSS scheme
-    # use a SHA-1 hasher for use in the RSA signing object
+    # sign using PKCS1 and hash using SHA
     h = SHA.new()
     h.update(f)
     signer = PKCS1_PSS.new(key)
-    # create the signature and prepend it to the message
+    # prepend our signature to the file
     signature = signer.sign(h)
     return signature + f
 
